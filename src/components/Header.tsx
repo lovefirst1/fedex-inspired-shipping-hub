@@ -53,7 +53,7 @@ const Header = () => {
             >
               Track Shipment
             </Link>
-            {user ? (
+            {user && (
               <>
                 <Link
                   to="/admin"
@@ -69,15 +69,6 @@ const Header = () => {
                   Sign Out
                 </Button>
               </>
-            ) : (
-              <Button
-                onClick={() => navigate("/login")}
-                variant="default"
-                size="sm"
-                className="bg-accent hover:bg-accent/90"
-              >
-                Admin Login
-              </Button>
             )}
           </nav>
 
@@ -107,7 +98,7 @@ const Header = () => {
             >
               Track Shipment
             </Link>
-            {user ? (
+            {user && (
               <>
                 <Link
                   to="/admin"
@@ -128,18 +119,6 @@ const Header = () => {
                   Sign Out
                 </Button>
               </>
-            ) : (
-              <Button
-                onClick={() => {
-                  navigate("/login");
-                  setMobileMenuOpen(false);
-                }}
-                variant="default"
-                size="sm"
-                className="w-full bg-accent hover:bg-accent/90"
-              >
-                Admin Login
-              </Button>
             )}
           </div>
         )}
