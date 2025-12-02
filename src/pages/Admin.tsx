@@ -17,11 +17,12 @@ import { currencies } from "@/data/currencies";
 import ShipmentProgressTracker from "@/components/ShipmentProgressTracker";
 
 const statusOptions = [
-  { value: "pending", label: "Order Received / Pending" },
-  { value: "processing", label: "Processing" },
+  { value: "order received", label: "Order Received" },
+  { value: "picked up", label: "Picked Up" },
+  { value: "departed origin facility", label: "Departed Origin Facility" },
   { value: "in transit", label: "In Transit" },
-  { value: "sorting center", label: "Sorting Center" },
-  { value: "mainland", label: "Mainland" },
+  { value: "customs check", label: "Customs Check" },
+  { value: "arrived at local facility", label: "Arrived at Local Facility" },
   { value: "out for delivery", label: "Out for Delivery" },
   { value: "delivered", label: "Delivered" },
 ];
@@ -49,7 +50,7 @@ const Admin = () => {
     destination_city: "",
     destination_country: "",
     current_location: "",
-    status: "pending",
+    status: "order received",
     estimated_delivery_date: "",
     held_by_customs: false,
     notes: "",
@@ -134,7 +135,7 @@ const Admin = () => {
       destination_city: shipment.destination_city || "",
       destination_country: shipment.destination_country || "",
       current_location: shipment.current_location || "",
-      status: shipment.status || "pending",
+      status: shipment.status || "order received",
       estimated_delivery_date: shipment.estimated_delivery_date ? shipment.estimated_delivery_date.split('T')[0] : "",
       held_by_customs: shipment.held_by_customs || false,
       notes: shipment.notes || "",
@@ -322,10 +323,12 @@ const Admin = () => {
     switch (status.toLowerCase()) {
       case "delivered": return "bg-green-600 text-white";
       case "out for delivery": return "bg-primary text-primary-foreground";
+      case "arrived at local facility": return "bg-cyan-600 text-white";
+      case "customs check": return "bg-red-500 text-white";
       case "in transit": return "bg-blue-600 text-white";
-      case "sorting center": return "bg-indigo-600 text-white";
-      case "mainland": return "bg-cyan-600 text-white";
-      case "processing": return "bg-amber-500 text-white";
+      case "departed origin facility": return "bg-indigo-600 text-white";
+      case "picked up": return "bg-amber-500 text-white";
+      case "order received": return "bg-muted text-muted-foreground";
       default: return "bg-muted text-muted-foreground";
     }
   };
