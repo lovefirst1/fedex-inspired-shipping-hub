@@ -8,12 +8,23 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Package, Edit, Trash2 } from "lucide-react";
+import { Plus, Package, Edit, Trash2, Eye, Link2, Copy } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { currencies } from "@/data/currencies";
+import ShipmentProgressTracker from "@/components/ShipmentProgressTracker";
+
+const statusOptions = [
+  { value: "pending", label: "Order Received / Pending" },
+  { value: "processing", label: "Processing" },
+  { value: "in transit", label: "In Transit" },
+  { value: "sorting center", label: "Sorting Center" },
+  { value: "mainland", label: "Mainland" },
+  { value: "out for delivery", label: "Out for Delivery" },
+  { value: "delivered", label: "Delivered" },
+];
 
 const Admin = () => {
   const [user, setUser] = useState<any>(null);
@@ -21,11 +32,11 @@ const Admin = () => {
   const [shipments, setShipments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingShipment, setEditingShipment] = useState<any>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Form states
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     tracking_code: "",
     sender_name: "",
     sender_address: "",
@@ -46,7 +57,9 @@ const Admin = () => {
     package_value: "",
     shipping_fee: "",
     delivery_days: "",
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
 
   useEffect(() => {
     checkUser();
@@ -106,9 +119,50 @@ const Admin = () => {
     return `${prefix}${random}`;
   };
 
-  const handleCreateShipment = async (e: React.FormEvent) => {
+  const handleOpenEdit = (shipment: any) => {
+    setEditingShipment(shipment);
+    setFormData({
+      tracking_code: shipment.tracking_code || "",
+      sender_name: shipment.sender_name || "",
+      sender_address: shipment.sender_address || "",
+      receiver_name: shipment.receiver_name || "",
+      receiver_address: shipment.receiver_address || "",
+      package_description: shipment.package_description || "",
+      package_weight: shipment.package_weight?.toString() || "",
+      origin_city: shipment.origin_city || "",
+      origin_country: shipment.origin_country || "",
+      destination_city: shipment.destination_city || "",
+      destination_country: shipment.destination_country || "",
+      current_location: shipment.current_location || "",
+      status: shipment.status || "pending",
+      estimated_delivery_date: shipment.estimated_delivery_date ? shipment.estimated_delivery_date.split('T')[0] : "",
+      held_by_customs: shipment.held_by_customs || false,
+      notes: shipment.notes || "",
+      currency: shipment.currency || "USD",
+      package_value: shipment.package_value?.toString() || "",
+      shipping_fee: shipment.shipping_fee?.toString() || "",
+      delivery_days: shipment.delivery_days?.toString() || "",
+    });
+    setDialogOpen(true);
+  };
+
+  const handleOpenCreate = () => {
+    setEditingShipment(null);
+    setFormData(initialFormData);
+    setDialogOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (editingShipment) {
+      await handleUpdateShipment();
+    } else {
+      await handleCreateShipment();
+    }
+  };
+
+  const handleCreateShipment = async () => {
     const trackingCode = formData.tracking_code || generateTrackingCode();
 
     const { data, error } = await supabase
@@ -165,33 +219,69 @@ const Admin = () => {
     });
 
     setDialogOpen(false);
-    resetForm();
+    setFormData(initialFormData);
     fetchShipments();
   };
 
-  const resetForm = () => {
-    setFormData({
-      tracking_code: "",
-      sender_name: "",
-      sender_address: "",
-      receiver_name: "",
-      receiver_address: "",
-      package_description: "",
-      package_weight: "",
-      origin_city: "",
-      origin_country: "",
-      destination_city: "",
-      destination_country: "",
-      current_location: "",
-      status: "pending",
-      estimated_delivery_date: "",
-      held_by_customs: false,
-      notes: "",
-      currency: "USD",
-      package_value: "",
-      shipping_fee: "",
-      delivery_days: "",
+  const handleUpdateShipment = async () => {
+    const oldStatus = editingShipment.status;
+    const newStatus = formData.status;
+
+    const { error } = await supabase
+      .from("shipments")
+      .update({
+        sender_name: formData.sender_name,
+        sender_address: formData.sender_address,
+        receiver_name: formData.receiver_name,
+        receiver_address: formData.receiver_address,
+        package_description: formData.package_description,
+        package_weight: formData.package_weight ? parseFloat(formData.package_weight) : null,
+        origin_city: formData.origin_city,
+        origin_country: formData.origin_country,
+        destination_city: formData.destination_city,
+        destination_country: formData.destination_country,
+        current_location: formData.current_location,
+        status: formData.status,
+        estimated_delivery_date: formData.estimated_delivery_date || null,
+        held_by_customs: formData.held_by_customs,
+        notes: formData.notes,
+        currency: formData.currency,
+        package_value: formData.package_value ? parseFloat(formData.package_value) : null,
+        shipping_fee: formData.shipping_fee ? parseFloat(formData.shipping_fee) : null,
+        delivery_days: formData.delivery_days ? parseInt(formData.delivery_days) : null,
+      })
+      .eq("id", editingShipment.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // If status changed, add timeline entry
+    if (oldStatus !== newStatus) {
+      await supabase.from("shipment_timeline").insert([
+        {
+          shipment_id: editingShipment.id,
+          status: newStatus,
+          location: formData.current_location || formData.destination_city,
+          description: `Status updated to ${newStatus}`,
+        },
+      ]);
+    }
+
+    toast({
+      title: "Success!",
+      description: "Shipment updated successfully",
     });
+
+    setDialogOpen(false);
+    setEditingShipment(null);
+    setFormData(initialFormData);
+    fetchShipments();
   };
 
   const handleDeleteShipment = async (id: string) => {
@@ -214,9 +304,30 @@ const Admin = () => {
     }
   };
 
+  const copyTrackingLink = (trackingCode: string) => {
+    const link = `${window.location.origin}/tracking?code=${trackingCode}`;
+    navigator.clipboard.writeText(link);
+    toast({
+      title: "Copied!",
+      description: "Tracking link copied to clipboard",
+    });
+  };
+
   const getCurrencySymbol = (code: string) => {
     const currency = currencies.find(c => c.code === code);
     return currency?.symbol || code;
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "delivered": return "bg-green-600 text-white";
+      case "out for delivery": return "bg-primary text-primary-foreground";
+      case "in transit": return "bg-blue-600 text-white";
+      case "sorting center": return "bg-indigo-600 text-white";
+      case "mainland": return "bg-cyan-600 text-white";
+      case "processing": return "bg-amber-500 text-white";
+      default: return "bg-muted text-muted-foreground";
+    }
   };
 
   if (!profile?.is_admin) {
@@ -243,235 +354,253 @@ const Admin = () => {
     <div className="min-h-screen flex flex-col bg-background">
       <Header />
       
-      <main className="flex-1 py-12">
+      <main className="flex-1 py-8 md:py-12">
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
             <div>
-              <h1 className="text-4xl font-bold text-foreground mb-2">Admin Dashboard</h1>
+              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Admin Dashboard</h1>
               <p className="text-muted-foreground">Manage shipments and tracking</p>
             </div>
-            <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-accent hover:bg-accent/90">
-                  <Plus className="mr-2 h-5 w-5" />
-                  Create Shipment
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle>Create New Shipment</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleCreateShipment} className="space-y-4">
+            <Button onClick={handleOpenCreate} className="bg-accent hover:bg-accent/90">
+              <Plus className="mr-2 h-5 w-5" />
+              Create Shipment
+            </Button>
+          </div>
+
+          {/* Create/Edit Dialog */}
+          <Dialog open={dialogOpen} onOpenChange={(open) => {
+            setDialogOpen(open);
+            if (!open) {
+              setEditingShipment(null);
+              setFormData(initialFormData);
+            }
+          }}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{editingShipment ? "Edit Shipment" : "Create New Shipment"}</DialogTitle>
+              </DialogHeader>
+
+              {/* Progress Tracker Preview */}
+              {formData.status && (
+                <div className="py-4 border-b">
+                  <Label className="text-sm text-muted-foreground mb-2 block">Status Preview</Label>
+                  <ShipmentProgressTracker status={formData.status} heldByCustoms={formData.held_by_customs} />
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Tracking Code {editingShipment ? "(read-only)" : "(optional)"}</Label>
+                    <Input
+                      placeholder="Auto-generated if left empty"
+                      value={formData.tracking_code}
+                      onChange={(e) => setFormData({ ...formData, tracking_code: e.target.value })}
+                      disabled={!!editingShipment}
+                      className={editingShipment ? "bg-muted" : ""}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Status *</Label>
+                    <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statusOptions.map((status) => (
+                          <SelectItem key={status.value} value={status.value}>
+                            {status.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-lg">Sender Information</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Tracking Code (optional)</Label>
+                      <Label>Sender Name *</Label>
                       <Input
-                        placeholder="Auto-generated if left empty"
-                        value={formData.tracking_code}
-                        onChange={(e) => setFormData({ ...formData, tracking_code: e.target.value })}
+                        required
+                        value={formData.sender_name}
+                        onChange={(e) => setFormData({ ...formData, sender_name: e.target.value })}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Status</Label>
-                      <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+                      <Label>Sender Address *</Label>
+                      <Input
+                        required
+                        value={formData.sender_address}
+                        onChange={(e) => setFormData({ ...formData, sender_address: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Origin City *</Label>
+                      <Input
+                        required
+                        value={formData.origin_city}
+                        onChange={(e) => setFormData({ ...formData, origin_city: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Origin Country *</Label>
+                      <Input
+                        required
+                        value={formData.origin_country}
+                        onChange={(e) => setFormData({ ...formData, origin_country: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-lg">Receiver Information</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Receiver Name *</Label>
+                      <Input
+                        required
+                        value={formData.receiver_name}
+                        onChange={(e) => setFormData({ ...formData, receiver_name: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Receiver Address *</Label>
+                      <Input
+                        required
+                        value={formData.receiver_address}
+                        onChange={(e) => setFormData({ ...formData, receiver_address: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Destination City *</Label>
+                      <Input
+                        required
+                        value={formData.destination_city}
+                        onChange={(e) => setFormData({ ...formData, destination_city: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Destination Country *</Label>
+                      <Input
+                        required
+                        value={formData.destination_country}
+                        onChange={(e) => setFormData({ ...formData, destination_country: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-lg">Package Details</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2 col-span-2">
+                      <Label>Package Description</Label>
+                      <Textarea
+                        value={formData.package_description}
+                        onChange={(e) => setFormData({ ...formData, package_description: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Weight (kg)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={formData.package_weight}
+                        onChange={(e) => setFormData({ ...formData, package_weight: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Currency</Label>
+                      <Select value={formData.currency} onValueChange={(value) => setFormData({ ...formData, currency: value })}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="in transit">In Transit</SelectItem>
-                          <SelectItem value="out for delivery">Out for Delivery</SelectItem>
-                          <SelectItem value="delivered">Delivered</SelectItem>
+                        <SelectContent className="max-h-60">
+                          {currencies.map((currency) => (
+                            <SelectItem key={currency.code} value={currency.code}>
+                              {currency.code} - {currency.name} ({currency.symbol})
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-lg">Sender Information</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Sender Name *</Label>
-                        <Input
-                          required
-                          value={formData.sender_name}
-                          onChange={(e) => setFormData({ ...formData, sender_name: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Sender Address *</Label>
-                        <Input
-                          required
-                          value={formData.sender_address}
-                          onChange={(e) => setFormData({ ...formData, sender_address: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Origin City *</Label>
-                        <Input
-                          required
-                          value={formData.origin_city}
-                          onChange={(e) => setFormData({ ...formData, origin_city: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Origin Country *</Label>
-                        <Input
-                          required
-                          value={formData.origin_country}
-                          onChange={(e) => setFormData({ ...formData, origin_country: e.target.value })}
-                        />
-                      </div>
+                    <div className="space-y-2">
+                      <Label>Package Value</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={formData.package_value}
+                        onChange={(e) => setFormData({ ...formData, package_value: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Shipping Fee</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        placeholder="0.00"
+                        value={formData.shipping_fee}
+                        onChange={(e) => setFormData({ ...formData, shipping_fee: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Delivery Days</Label>
+                      <Input
+                        type="number"
+                        placeholder="e.g. 5"
+                        value={formData.delivery_days}
+                        onChange={(e) => setFormData({ ...formData, delivery_days: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Current Location</Label>
+                      <Input
+                        value={formData.current_location}
+                        onChange={(e) => setFormData({ ...formData, current_location: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Estimated Delivery</Label>
+                      <Input
+                        type="date"
+                        value={formData.estimated_delivery_date}
+                        onChange={(e) => setFormData({ ...formData, estimated_delivery_date: e.target.value })}
+                      />
                     </div>
                   </div>
+                </div>
 
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-lg">Receiver Information</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Receiver Name *</Label>
-                        <Input
-                          required
-                          value={formData.receiver_name}
-                          onChange={(e) => setFormData({ ...formData, receiver_name: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Receiver Address *</Label>
-                        <Input
-                          required
-                          value={formData.receiver_address}
-                          onChange={(e) => setFormData({ ...formData, receiver_address: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Destination City *</Label>
-                        <Input
-                          required
-                          value={formData.destination_city}
-                          onChange={(e) => setFormData({ ...formData, destination_city: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Destination Country *</Label>
-                        <Input
-                          required
-                          value={formData.destination_country}
-                          onChange={(e) => setFormData({ ...formData, destination_country: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={formData.held_by_customs}
+                    onCheckedChange={(checked) => setFormData({ ...formData, held_by_customs: checked })}
+                  />
+                  <Label>Held by Customs</Label>
+                </div>
 
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-lg">Package Details</h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2 col-span-2">
-                        <Label>Package Description</Label>
-                        <Textarea
-                          value={formData.package_description}
-                          onChange={(e) => setFormData({ ...formData, package_description: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Weight (kg)</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={formData.package_weight}
-                          onChange={(e) => setFormData({ ...formData, package_weight: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Currency</Label>
-                        <Select value={formData.currency} onValueChange={(value) => setFormData({ ...formData, currency: value })}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-60">
-                            {currencies.map((currency) => (
-                              <SelectItem key={currency.code} value={currency.code}>
-                                {currency.code} - {currency.name} ({currency.symbol})
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Package Value</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={formData.package_value}
-                          onChange={(e) => setFormData({ ...formData, package_value: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Shipping Fee</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          placeholder="0.00"
-                          value={formData.shipping_fee}
-                          onChange={(e) => setFormData({ ...formData, shipping_fee: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Delivery Days</Label>
-                        <Input
-                          type="number"
-                          placeholder="e.g. 5"
-                          value={formData.delivery_days}
-                          onChange={(e) => setFormData({ ...formData, delivery_days: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Current Location</Label>
-                        <Input
-                          value={formData.current_location}
-                          onChange={(e) => setFormData({ ...formData, current_location: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Estimated Delivery</Label>
-                        <Input
-                          type="date"
-                          value={formData.estimated_delivery_date}
-                          onChange={(e) => setFormData({ ...formData, estimated_delivery_date: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                  </div>
+                <div className="space-y-2">
+                  <Label>Notes</Label>
+                  <Textarea
+                    value={formData.notes}
+                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  />
+                </div>
 
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      checked={formData.held_by_customs}
-                      onCheckedChange={(checked) => setFormData({ ...formData, held_by_customs: checked })}
-                    />
-                    <Label>Held by Customs</Label>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Notes</Label>
-                    <Textarea
-                      value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    />
-                  </div>
-
-                  <div className="flex justify-end space-x-2">
-                    <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
-                      Cancel
-                    </Button>
-                    <Button type="submit" className="bg-accent hover:bg-accent/90">
-                      Create Shipment
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
+                <div className="flex justify-end space-x-2">
+                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="bg-accent hover:bg-accent/90">
+                    {editingShipment ? "Update Shipment" : "Create Shipment"}
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
 
           {/* Shipments List */}
           <div className="grid grid-cols-1 gap-6">
@@ -486,20 +615,34 @@ const Admin = () => {
               </Card>
             ) : (
               shipments.map((shipment) => (
-                <Card key={shipment.id} className="p-6 hover:shadow-lg transition-shadow">
-                  <div className="flex items-start justify-between">
+                <Card key={shipment.id} className="p-4 md:p-6 hover:shadow-lg transition-shadow">
+                  {/* Progress Tracker */}
+                  <div className="mb-6 pb-4 border-b overflow-x-auto">
+                    <ShipmentProgressTracker 
+                      status={shipment.status} 
+                      heldByCustoms={shipment.held_by_customs}
+                      className="min-w-[600px]"
+                    />
+                  </div>
+
+                  <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                     <div className="flex-1">
-                      <div className="flex items-center space-x-3 mb-4">
+                      <div className="flex flex-wrap items-center gap-3 mb-4">
                         <h3 className="text-xl font-semibold text-foreground">
                           {shipment.tracking_code}
                         </h3>
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          shipment.status === "delivered" ? "bg-green-100 text-green-800" :
-                          shipment.status === "in transit" ? "bg-blue-100 text-blue-800" :
-                          "bg-gray-100 text-gray-800"
-                        }`}>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(shipment.status)}`}>
                           {shipment.status}
                         </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => copyTrackingLink(shipment.tracking_code)}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <Copy className="h-4 w-4 mr-1" />
+                          Copy Link
+                        </Button>
                       </div>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
@@ -523,18 +666,29 @@ const Admin = () => {
                           )}
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Weight</p>
-                          <p className="font-medium">{shipment.package_weight ? `${shipment.package_weight} kg` : "-"}</p>
+                          <p className="text-muted-foreground">Current Location</p>
+                          <p className="font-medium">{shipment.current_location || "-"}</p>
+                          <p className="text-muted-foreground">{shipment.package_weight ? `${shipment.package_weight} kg` : ""}</p>
                         </div>
                       </div>
                     </div>
-                    <div className="flex space-x-2">
+                    <div className="flex flex-wrap gap-2">
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => navigate(`/tracking?code=${shipment.tracking_code}`)}
                       >
-                        <Edit className="h-4 w-4" />
+                        <Eye className="h-4 w-4 mr-1" />
+                        View
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => handleOpenEdit(shipment)}
+                        className="bg-primary hover:bg-primary/90"
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
                       </Button>
                       <Button
                         variant="destructive"
