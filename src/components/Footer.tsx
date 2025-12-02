@@ -31,11 +31,6 @@ const Footer = () => {
                   Track Shipment
                 </Link>
               </li>
-              <li>
-                <Link to="/login" className="text-primary-foreground/80 hover:text-primary-foreground transition-colors">
-                  Admin Login
-                </Link>
-              </li>
             </ul>
           </div>
 
@@ -60,7 +55,7 @@ const Footer = () => {
               </li>
               <li className="flex items-center space-x-2">
                 <Mail className="h-4 w-4" />
-                <span>support@shipexpress.com</span>
+                <span>support@websitecloud.org</span>
               </li>
               <li className="flex items-center space-x-2">
                 <MapPin className="h-4 w-4" />
