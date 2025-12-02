@@ -23,6 +23,7 @@ import {
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useToast } from "@/hooks/use-toast";
+import ShipmentProgressTracker from "@/components/ShipmentProgressTracker";
 
 const Tracking = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -277,6 +278,15 @@ const Tracking = () => {
                       </div>
                     )}
                   </div>
+                </div>
+
+                {/* Visual Progress Tracker */}
+                <div className="mb-6 pb-6 border-b overflow-x-auto">
+                  <ShipmentProgressTracker 
+                    status={shipment.status} 
+                    heldByCustoms={shipment.held_by_customs}
+                    className="min-w-[600px]"
+                  />
                 </div>
 
                 {shipment.held_by_customs && (
