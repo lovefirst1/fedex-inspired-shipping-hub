@@ -4,29 +4,27 @@ import { Package, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const {
+    toast
+  } = useToast();
 
   // Check user session
   supabase.auth.onAuthStateChange((event, session) => {
     setUser(session?.user ?? null);
   });
-
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     toast({
       title: "Signed out successfully",
-      description: "You have been logged out.",
+      description: "You have been logged out."
     });
     navigate("/");
   };
-
-  return (
-    <header className="bg-white border-b border-border sticky top-0 z-50 shadow-sm">
+  return <header className="bg-white border-b border-border sticky top-0 z-50 shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -41,73 +39,37 @@ const Header = () => {
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Link
-              to="/"
-              className="text-foreground hover:text-primary font-medium transition-colors"
-            >
+            <Link to="/" className="text-foreground hover:text-primary font-medium transition-colors">
               Home
             </Link>
-            <Link
-              to="/tracking"
-              className="text-foreground hover:text-primary font-medium transition-colors"
-            >
+            <Link to="/tracking" className="text-foreground hover:text-primary font-medium transition-colors">
               Track Shipment
             </Link>
-            {user && (
-              <Button
-                onClick={handleSignOut}
-                variant="outline"
-                size="sm"
-              >
-                Sign Out
-              </Button>
-            )}
+            {user}
           </nav>
 
           {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2 text-foreground"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
+          <button className="md:hidden p-2 text-foreground" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
             {mobileMenuOpen ? <X /> : <Menu />}
           </button>
         </div>
 
         {/* Mobile Navigation */}
-        {mobileMenuOpen && (
-          <div className="md:hidden py-4 space-y-4 border-t border-border">
-            <Link
-              to="/"
-              className="block text-foreground hover:text-primary font-medium transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
+        {mobileMenuOpen && <div className="md:hidden py-4 space-y-4 border-t border-border">
+            <Link to="/" className="block text-foreground hover:text-primary font-medium transition-colors" onClick={() => setMobileMenuOpen(false)}>
               Home
             </Link>
-            <Link
-              to="/tracking"
-              className="block text-foreground hover:text-primary font-medium transition-colors"
-              onClick={() => setMobileMenuOpen(false)}
-            >
+            <Link to="/tracking" className="block text-foreground hover:text-primary font-medium transition-colors" onClick={() => setMobileMenuOpen(false)}>
               Track Shipment
             </Link>
-            {user && (
-              <Button
-                onClick={() => {
-                  handleSignOut();
-                  setMobileMenuOpen(false);
-                }}
-                variant="outline"
-                size="sm"
-                className="w-full"
-              >
+            {user && <Button onClick={() => {
+          handleSignOut();
+          setMobileMenuOpen(false);
+        }} variant="outline" size="sm" className="w-full">
                 Sign Out
-              </Button>
-            )}
-          </div>
-        )}
+              </Button>}
+          </div>}
       </div>
-    </header>
-  );
+    </header>;
 };
-
 export default Header;
