@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Switch } from "@/components/ui/switch";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { currencies } from "@/data/currencies";
 
 const Admin = () => {
   const [user, setUser] = useState<any>(null);
@@ -41,6 +42,10 @@ const Admin = () => {
     estimated_delivery_date: "",
     held_by_customs: false,
     notes: "",
+    currency: "USD",
+    package_value: "",
+    shipping_fee: "",
+    delivery_days: "",
   });
 
   useEffect(() => {
@@ -110,9 +115,26 @@ const Admin = () => {
       .from("shipments")
       .insert([
         {
-          ...formData,
           tracking_code: trackingCode,
+          sender_name: formData.sender_name,
+          sender_address: formData.sender_address,
+          receiver_name: formData.receiver_name,
+          receiver_address: formData.receiver_address,
+          package_description: formData.package_description,
           package_weight: formData.package_weight ? parseFloat(formData.package_weight) : null,
+          origin_city: formData.origin_city,
+          origin_country: formData.origin_country,
+          destination_city: formData.destination_city,
+          destination_country: formData.destination_country,
+          current_location: formData.current_location,
+          status: formData.status,
+          estimated_delivery_date: formData.estimated_delivery_date || null,
+          held_by_customs: formData.held_by_customs,
+          notes: formData.notes,
+          currency: formData.currency,
+          package_value: formData.package_value ? parseFloat(formData.package_value) : null,
+          shipping_fee: formData.shipping_fee ? parseFloat(formData.shipping_fee) : null,
+          delivery_days: formData.delivery_days ? parseInt(formData.delivery_days) : null,
         },
       ])
       .select()
@@ -165,6 +187,10 @@ const Admin = () => {
       estimated_delivery_date: "",
       held_by_customs: false,
       notes: "",
+      currency: "USD",
+      package_value: "",
+      shipping_fee: "",
+      delivery_days: "",
     });
   };
 
@@ -186,6 +212,11 @@ const Admin = () => {
       });
       fetchShipments();
     }
+  };
+
+  const getCurrencySymbol = (code: string) => {
+    const currency = currencies.find(c => c.code === code);
+    return currency?.symbol || code;
   };
 
   if (!profile?.is_admin) {
@@ -335,7 +366,7 @@ const Admin = () => {
                   <div className="space-y-4">
                     <h3 className="font-semibold text-lg">Package Details</h3>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
+                      <div className="space-y-2 col-span-2">
                         <Label>Package Description</Label>
                         <Textarea
                           value={formData.package_description}
@@ -349,6 +380,50 @@ const Admin = () => {
                           step="0.01"
                           value={formData.package_weight}
                           onChange={(e) => setFormData({ ...formData, package_weight: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Currency</Label>
+                        <Select value={formData.currency} onValueChange={(value) => setFormData({ ...formData, currency: value })}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-60">
+                            {currencies.map((currency) => (
+                              <SelectItem key={currency.code} value={currency.code}>
+                                {currency.code} - {currency.name} ({currency.symbol})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Package Value</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={formData.package_value}
+                          onChange={(e) => setFormData({ ...formData, package_value: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Shipping Fee</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={formData.shipping_fee}
+                          onChange={(e) => setFormData({ ...formData, shipping_fee: e.target.value })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Delivery Days</Label>
+                        <Input
+                          type="number"
+                          placeholder="e.g. 5"
+                          value={formData.delivery_days}
+                          onChange={(e) => setFormData({ ...formData, delivery_days: e.target.value })}
                         />
                       </div>
                       <div className="space-y-2">
@@ -426,7 +501,7 @@ const Admin = () => {
                           {shipment.status}
                         </span>
                       </div>
-                      <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
                           <p className="text-muted-foreground">From</p>
                           <p className="font-medium">{shipment.sender_name}</p>
@@ -436,6 +511,20 @@ const Admin = () => {
                           <p className="text-muted-foreground">To</p>
                           <p className="font-medium">{shipment.receiver_name}</p>
                           <p className="text-muted-foreground">{shipment.destination_city}, {shipment.destination_country}</p>
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Value / Fee</p>
+                          <p className="font-medium">
+                            {shipment.package_value ? `${getCurrencySymbol(shipment.currency)}${shipment.package_value}` : "-"}
+                            {shipment.shipping_fee ? ` / ${getCurrencySymbol(shipment.currency)}${shipment.shipping_fee}` : ""}
+                          </p>
+                          {shipment.delivery_days && (
+                            <p className="text-muted-foreground">{shipment.delivery_days} days</p>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-muted-foreground">Weight</p>
+                          <p className="font-medium">{shipment.package_weight ? `${shipment.package_weight} kg` : "-"}</p>
                         </div>
                       </div>
                     </div>

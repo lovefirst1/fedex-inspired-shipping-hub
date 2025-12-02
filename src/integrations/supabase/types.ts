@@ -80,7 +80,9 @@ export type Database = {
         Row: {
           actual_delivery_date: string | null
           created_at: string | null
+          currency: string | null
           current_location: string | null
+          delivery_days: number | null
           destination_city: string
           destination_country: string
           estimated_delivery_date: string | null
@@ -90,11 +92,13 @@ export type Database = {
           origin_city: string
           origin_country: string
           package_description: string | null
+          package_value: number | null
           package_weight: number | null
           receiver_address: string
           receiver_name: string
           sender_address: string
           sender_name: string
+          shipping_fee: number | null
           status: string
           tracking_code: string
           updated_at: string | null
@@ -102,7 +106,9 @@ export type Database = {
         Insert: {
           actual_delivery_date?: string | null
           created_at?: string | null
+          currency?: string | null
           current_location?: string | null
+          delivery_days?: number | null
           destination_city: string
           destination_country: string
           estimated_delivery_date?: string | null
@@ -112,11 +118,13 @@ export type Database = {
           origin_city: string
           origin_country: string
           package_description?: string | null
+          package_value?: number | null
           package_weight?: number | null
           receiver_address: string
           receiver_name: string
           sender_address: string
           sender_name: string
+          shipping_fee?: number | null
           status?: string
           tracking_code: string
           updated_at?: string | null
@@ -124,7 +132,9 @@ export type Database = {
         Update: {
           actual_delivery_date?: string | null
           created_at?: string | null
+          currency?: string | null
           current_location?: string | null
+          delivery_days?: number | null
           destination_city?: string
           destination_country?: string
           estimated_delivery_date?: string | null
@@ -134,11 +144,13 @@ export type Database = {
           origin_city?: string
           origin_country?: string
           package_description?: string | null
+          package_value?: number | null
           package_weight?: number | null
           receiver_address?: string
           receiver_name?: string
           sender_address?: string
           sender_name?: string
+          shipping_fee?: number | null
           status?: string
           tracking_code?: string
           updated_at?: string | null
