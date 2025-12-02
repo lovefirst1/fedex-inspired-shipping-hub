@@ -54,21 +54,13 @@ const Header = () => {
               Track Shipment
             </Link>
             {user && (
-              <>
-                <Link
-                  to="/admin"
-                  className="text-foreground hover:text-primary font-medium transition-colors"
-                >
-                  Admin
-                </Link>
-                <Button
-                  onClick={handleSignOut}
-                  variant="outline"
-                  size="sm"
-                >
-                  Sign Out
-                </Button>
-              </>
+              <Button
+                onClick={handleSignOut}
+                variant="outline"
+                size="sm"
+              >
+                Sign Out
+              </Button>
             )}
           </nav>
 
@@ -99,26 +91,17 @@ const Header = () => {
               Track Shipment
             </Link>
             {user && (
-              <>
-                <Link
-                  to="/admin"
-                  className="block text-foreground hover:text-primary font-medium transition-colors"
-                  onClick={() => setMobileMenuOpen(false)}
-                >
-                  Admin
-                </Link>
-                <Button
-                  onClick={() => {
-                    handleSignOut();
-                    setMobileMenuOpen(false);
-                  }}
-                  variant="outline"
-                  size="sm"
-                  className="w-full"
-                >
-                  Sign Out
-                </Button>
-              </>
+              <Button
+                onClick={() => {
+                  handleSignOut();
+                  setMobileMenuOpen(false);
+                }}
+                variant="outline"
+                size="sm"
+                className="w-full"
+              >
+                Sign Out
+              </Button>
             )}
           </div>
         )}
