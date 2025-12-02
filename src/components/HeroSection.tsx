@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import heroImage from "@/assets/hero-shipping.jpg";
+import heroImage from "@/assets/hero-fedex-truck.jpg";
 
 const HeroSection = () => {
   const [trackingCode, setTrackingCode] = useState("");

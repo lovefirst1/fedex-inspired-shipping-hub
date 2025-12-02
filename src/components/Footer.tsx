@@ -10,7 +10,7 @@ const Footer = () => {
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
               <Package className="h-6 w-6" />
-              <span className="text-xl font-bold">ShipExpress</span>
+              <span className="text-xl font-bold">FedEx</span>
             </div>
             <p className="text-primary-foreground/80 text-sm">
               Reliable shipping solutions worldwide. Fast, secure, and affordable delivery services.
