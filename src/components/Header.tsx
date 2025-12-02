@@ -45,7 +45,6 @@ const Header = () => {
             <Link to="/tracking" className="text-foreground hover:text-primary font-medium transition-colors">
               Track Shipment
             </Link>
-            {user}
           </nav>
 
           {/* Mobile Menu Button */}
