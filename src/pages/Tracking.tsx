@@ -19,6 +19,8 @@ import {
   DollarSign,
   Scale,
   Timer,
+  Plane,
+  Warehouse,
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -163,14 +165,17 @@ const Tracking = () => {
         return <PackageCheck className="h-5 w-5 text-green-600" />;
       case "out for delivery":
         return <Truck className="h-5 w-5 text-primary" />;
+      case "arrived at local facility":
+        return <Warehouse className="h-5 w-5 text-cyan-600" />;
+      case "customs check":
+        return <AlertTriangle className="h-5 w-5 text-red-500" />;
       case "in transit":
-        return <Truck className="h-5 w-5 text-blue-600" />;
-      case "processing":
-        return <RefreshCw className="h-5 w-5 text-amber-600" />;
-      case "held by customs":
-        return <AlertTriangle className="h-5 w-5 text-red-600" />;
+        return <Plane className="h-5 w-5 text-blue-600" />;
+      case "departed origin facility":
+        return <Warehouse className="h-5 w-5 text-indigo-600" />;
+      case "picked up":
+        return <Package className="h-5 w-5 text-amber-500" />;
       case "order received":
-      case "pending":
         return <Package className="h-5 w-5 text-muted-foreground" />;
       default:
         return <Clock className="h-5 w-5 text-muted-foreground" />;
@@ -183,14 +188,17 @@ const Tracking = () => {
         return "bg-green-600 text-white";
       case "out for delivery":
         return "bg-primary text-primary-foreground";
+      case "arrived at local facility":
+        return "bg-cyan-600 text-white";
+      case "customs check":
+        return "bg-red-500 text-white";
       case "in transit":
         return "bg-blue-600 text-white";
-      case "processing":
+      case "departed origin facility":
+        return "bg-indigo-600 text-white";
+      case "picked up":
         return "bg-amber-500 text-white";
-      case "held by customs":
-        return "bg-red-600 text-white";
       case "order received":
-      case "pending":
         return "bg-muted text-muted-foreground";
       default:
         return "bg-secondary text-secondary-foreground";

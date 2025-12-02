@@ -8,11 +8,12 @@ interface ShipmentProgressTrackerProps {
 }
 
 const stages = [
-  { key: "pending", label: "Order Received", icon: Package },
-  { key: "processing", label: "Processing", icon: Warehouse },
+  { key: "order received", label: "Order Received", icon: Package },
+  { key: "picked up", label: "Picked Up", icon: Package },
+  { key: "departed origin facility", label: "Departed Origin", icon: Warehouse },
   { key: "in transit", label: "In Transit", icon: Plane },
-  { key: "sorting center", label: "Sorting Center", icon: Warehouse },
-  { key: "mainland", label: "Mainland", icon: Truck },
+  { key: "customs check", label: "Customs Check", icon: AlertTriangle },
+  { key: "arrived at local facility", label: "Local Facility", icon: Warehouse },
   { key: "out for delivery", label: "Out for Delivery", icon: Truck },
   { key: "delivered", label: "Delivered", icon: PackageCheck },
 ];
