@@ -8,11 +8,12 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { Lock, Mail } from "lucide-react";
+import { Lock, Mail, Eye, EyeOff } from "lucide-react";
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -20,8 +21,17 @@ const Login = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Prevent submission if already loading or missing credentials
-    if (loading || !email.trim() || !password.trim()) {
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+    
+    if (loading || !trimmedEmail || !trimmedPassword) {
+      if (!trimmedEmail || !trimmedPassword) {
+        toast({
+          title: "Missing credentials",
+          description: "Please enter both email and password.",
+          variant: "destructive",
+        });
+      }
       return;
     }
     
@@ -29,21 +39,35 @@ const Login = () => {
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password: password.trim(),
+        email: trimmedEmail,
+        password: trimmedPassword,
       });
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
-      toast({
-        title: "Success!",
-        description: "You have successfully signed in.",
-      });
-      navigate("/admin");
+      if (data.user) {
+        toast({
+          title: "Success!",
+          description: "You have successfully signed in.",
+        });
+        navigate("/admin");
+      }
     } catch (error: any) {
+      let errorMessage = "An error occurred during sign in.";
+      
+      if (error.message?.includes("Invalid login credentials")) {
+        errorMessage = "Incorrect email or password. Please check and try again.";
+      } else if (error.message?.includes("Email not confirmed")) {
+        errorMessage = "Please confirm your email before signing in.";
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
-        title: "Error",
-        description: error.message,
+        title: "Sign in failed",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -77,6 +101,9 @@ const Login = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  autoCorrect="off"
                   className="pl-10"
                 />
               </div>
@@ -87,13 +114,22 @@ const Login = () => {
                 <Lock className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                 <Input
                   id="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="pl-10"
+                  autoComplete="current-password"
+                  className="pl-10 pr-10"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
               </div>
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
