@@ -30,7 +30,7 @@ const Login = () => {
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: email.trim(),
-        password: password,
+        password: password.trim(),
       });
 
       if (error) throw error;
