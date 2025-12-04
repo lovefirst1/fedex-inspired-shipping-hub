@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Package, Edit, Trash2, Eye, Link2, Copy } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import Header from "@/components/Header";
+import AdminHeader from "@/components/AdminHeader";
 import Footer from "@/components/Footer";
 import { currencies } from "@/data/currencies";
 import ShipmentProgressTracker from "@/components/ShipmentProgressTracker";
@@ -70,7 +70,7 @@ const Admin = () => {
     const { data: { user } } = await supabase.auth.getUser();
     
     if (!user) {
-      navigate("/login");
+      navigate("/admin-portal");
       return;
     }
 
@@ -336,7 +336,7 @@ const Admin = () => {
   if (!profile?.is_admin) {
     return (
       <div className="min-h-screen flex flex-col bg-background">
-        <Header />
+        <AdminHeader />
         <main className="flex-1 flex items-center justify-center">
           <Card className="p-8 max-w-md text-center">
             <h2 className="text-2xl font-bold text-foreground mb-4">Access Denied</h2>
@@ -355,7 +355,7 @@ const Admin = () => {
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
-      <Header />
+      <AdminHeader />
       
       <main className="flex-1 py-8 md:py-12">
         <div className="container mx-auto px-4">

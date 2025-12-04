@@ -1,33 +1,12 @@
-import { Link, useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 import { Package, Menu, X } from "lucide-react";
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const navigate = useNavigate();
-  const { toast } = useToast();
 
-  useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    toast({
-      title: "Signed out successfully",
-      description: "You have been logged out."
-    });
-    navigate("/");
-  };
-  return <header className="bg-white border-b border-border sticky top-0 z-50 shadow-sm">
+  return (
+    <header className="bg-white border-b border-border sticky top-0 z-50 shadow-sm">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -57,21 +36,19 @@ const Header = () => {
         </div>
 
         {/* Mobile Navigation */}
-        {mobileMenuOpen && <div className="md:hidden py-4 space-y-4 border-t border-border">
+        {mobileMenuOpen && (
+          <div className="md:hidden py-4 space-y-4 border-t border-border">
             <Link to="/" className="block text-foreground hover:text-primary font-medium transition-colors" onClick={() => setMobileMenuOpen(false)}>
               Home
             </Link>
             <Link to="/tracking" className="block text-foreground hover:text-primary font-medium transition-colors" onClick={() => setMobileMenuOpen(false)}>
               Track Shipment
             </Link>
-            {user && <Button onClick={() => {
-          handleSignOut();
-          setMobileMenuOpen(false);
-        }} variant="outline" size="sm" className="w-full">
-                Sign Out
-              </Button>}
-          </div>}
+          </div>
+        )}
       </div>
-    </header>;
+    </header>
+  );
 };
+
 export default Header;
