@@ -8,13 +8,15 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Package, Edit, Trash2, Eye, Link2, Copy } from "lucide-react";
+import { Plus, Package, Edit, Trash2, Eye, Link2, Copy, FileText } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminHeader from "@/components/AdminHeader";
 import Footer from "@/components/Footer";
 import { currencies } from "@/data/currencies";
 import ShipmentProgressTracker from "@/components/ShipmentProgressTracker";
+import InvoiceGenerator from "@/components/InvoiceGenerator";
 
 const statusOptions = [
   { value: "order received", label: "Order Received" },
@@ -359,16 +361,30 @@ const Admin = () => {
       
       <main className="flex-1 py-8 md:py-12">
         <div className="container mx-auto px-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Admin Dashboard</h1>
-              <p className="text-muted-foreground">Manage shipments and tracking</p>
-            </div>
-            <Button onClick={handleOpenCreate} className="bg-accent hover:bg-accent/90">
-              <Plus className="mr-2 h-5 w-5" />
-              Create Shipment
-            </Button>
+          <div className="mb-8">
+            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">Admin Dashboard</h1>
+            <p className="text-muted-foreground">Manage shipments, tracking, and invoices</p>
           </div>
+
+          <Tabs defaultValue="shipments" className="space-y-6">
+            <TabsList className="grid w-full max-w-md grid-cols-2">
+              <TabsTrigger value="shipments" className="flex items-center gap-2">
+                <Package className="h-4 w-4" />
+                Shipments
+              </TabsTrigger>
+              <TabsTrigger value="invoices" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Invoices
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="shipments" className="space-y-6">
+              <div className="flex justify-end">
+                <Button onClick={handleOpenCreate} className="bg-accent hover:bg-accent/90">
+                  <Plus className="mr-2 h-5 w-5" />
+                  Create Shipment
+                </Button>
+              </div>
 
           {/* Create/Edit Dialog */}
           <Dialog open={dialogOpen} onOpenChange={(open) => {
@@ -706,6 +722,12 @@ const Admin = () => {
               ))
             )}
           </div>
+            </TabsContent>
+
+            <TabsContent value="invoices">
+              <InvoiceGenerator />
+            </TabsContent>
+          </Tabs>
         </div>
       </main>
 
